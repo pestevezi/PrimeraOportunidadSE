@@ -135,6 +135,7 @@ void blink(){
 
 void unblink() {
     PIT->CHANNEL[0].TCTRL &= PIT_TCTRL_TEN(0);
+    lcd_display_dec(0);
 }
 
 void pit_init(uint8_t mult) {
@@ -222,18 +223,6 @@ int main(void) {
         {
             ch = GETCHAR();
             PUTCHAR(ch);
-
-/*            if(ch != '\0'){
-              command[i] = ch;
-
-              if(ch = '')
-                ;
-              
-              if(ch == '\b')
-                i--;
-              else
-                i++;
-            }*/
 
             switch(ch){
               case '\0':
