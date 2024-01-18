@@ -3,11 +3,11 @@
 PREFIX=arm-none-eabi-
 
 ARCHFLAGS=-mthumb -mcpu=cortex-m0plus
-COMMONFLAGS=-g3 -Og -Wall -Werror $(ARCHFLAGS)
+COMMONFLAGS=-g3 -Og -Wall -Werror $(ARCHFLAGS) -DCPU_MKL46Z256VMP4
 
-CFLAGS=-I./includes -I./drivers $(COMMONFLAGS)
+CFLAGS=-I./include -I./drivers -I./utilities -I./BOARD $(COMMONFLAGS) 
 LDFLAGS=$(COMMONFLAGS) --specs=nano.specs -Wl,--gc-sections,-Map,$(TARGET).map,-Tlink.ld
-LDLIBS=-lm
+LDLIBS=
 
 CC=$(PREFIX)gcc
 LD=$(PREFIX)gcc
@@ -17,29 +17,16 @@ RM=rm -f
 
 TARGET=main
 
-SRC=$(wildcard *.c dotcs/*.c)
-OBJ=$(patsubst %.c, %.o, $(SRC)) #divide.o
+SRC=$(wildcard *.c drivers/*.c utilities/*.c include/*.c BOARD/*.c) 
+OBJ=$(patsubst %.c, %.o, $(SRC))
 
-all: build size
-build: elf srec bin
 elf: $(TARGET).elf
-srec: $(TARGET).srec
-bin: $(TARGET).bin
 
 clean:
-	$(RM) $(TARGET).srec $(TARGET).elf $(TARGET).bin $(TARGET).map $(OBJ) *.o
+	$(RM) $(TARGET).srec $(TARGET).elf $(TARGET).bin $(TARGET).map $(OBJ)
 
 $(TARGET).elf: $(OBJ)
 	$(LD) $(LDFLAGS) $(OBJ) $(LDLIBS) -o $@
 
-%.srec: %.elf
-	$(OBJCOPY) -O srec $< $@
-
-%.bin: %.elf
-	    $(OBJCOPY) -O binary $< $@
-
-size:
-	$(SIZE) $(TARGET).elf
-
-flash: all
+flash: elf
 	openocd -f openocd.cfg -c "program $(TARGET).elf verify reset exit"
