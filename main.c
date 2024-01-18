@@ -87,11 +87,6 @@ void button_init() {
 
 }
 
-void irclk_ini() {
-  MCG->C1 = MCG_C1_IRCLKEN(1) | MCG_C1_IREFSTEN(1);
-  MCG->C2 = MCG_C2_IRCS(0); //0 32KHZ internal reference clock; 1= 4MHz irc
-}
-
 
 void red_toggle(void) {
   GPIOE->PTOR = (1 << 29);
@@ -106,7 +101,6 @@ void green_toggle() {
 
 void red_on(bool on) {
   if(on){
-//    GPIOE->PDOR = 1;
     if(!redo)
       red_toggle();
    }
@@ -200,15 +194,14 @@ void PIT_Int_Handler(void) {
 
 int main(void) {
   char ch, command[200];
-  int i = 0;//, e;
+  int i = 0;
 
   /* Init board hardware. */
   BOARD_InitPins();
   BOARD_BootClockRUN();
   BOARD_InitDebugConsole();
 
-//  irclk_ini();
-  lcd_ini();
+  lcd_ini(); lcd_display_dec(0);
 
   led_init();
   button_init();
