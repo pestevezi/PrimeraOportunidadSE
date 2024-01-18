@@ -128,11 +128,15 @@ void blink(){
   red_toggle();
 }
 
+void unblink(){
+
+}
+
 void pit_init(uint8_t mult){
   SIM->SCGC6 |= SIM_SCGC6_PIT(1);
   PIT->MCR &= PIT_MCR_MDIS(0);
 
-  PIT->CHANNEL[0].LDVAL = 10900000 * mult;
+  PIT->CHANNEL[0].LDVAL = 20900000 * mult;
   PIT->CHANNEL[0].TCTRL &= PIT_TCTRL_CHN(0);
   PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN(1);
   PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE(1);
@@ -181,8 +185,8 @@ void PORTD_Int_Handler(void){
 
 }
 
-void PITIntHandler(void) {
-
+void PIT_Int_Handler(void) {
+  blink();
 
   PIT->CHANNEL[0].TFLG |= PIT_TFLG_TIF(1); //clear the flag
 }
@@ -205,7 +209,7 @@ int main(void)
 
   while (1) {
       i = 0;
-      bool valid = false;
+      bool valid = false, blinko = false;
 
       PRINTF("$");
       do
@@ -232,7 +236,11 @@ int main(void)
                 i--;
                 break;
               case ' ':
-                i++;
+                command[i] = '\0';
+                if (!strcmp(command, "blink")){
+                  blinko = true;
+                  i = 0;
+                }
                 break;
                default:
                 command[i] = ch;
@@ -261,6 +269,22 @@ int main(void)
           valid = true;
         }
         if (!strcmp(command, "toggle")){
+          blink();
+          PRINTF("Led rojo : %d\r\n", redo);
+          valid = true;
+        }
+        if(blinko){
+          uint8_t value = command[0] - 0x30U;
+          if(value != 0){
+            pit_init(value);
+            PRINTF("Ciclo de %d segundos", value);
+          }
+          else
+            unblink();
+
+          valid = true;
+        }
+        if (!strcmp(command, "unblink")){
           blink();
           PRINTF("Led rojo : %d\r\n", redo);
           valid = true;
