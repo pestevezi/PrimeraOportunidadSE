@@ -129,7 +129,7 @@ void blink(){
 }
 
 void unblink(){
-
+    PIT->CHANNEL[0].TCTRL &= PIT_TCTRL_TEN(0);
 }
 
 void pit_init(uint8_t mult){
@@ -277,7 +277,7 @@ int main(void)
           uint8_t value = command[0] - 0x30U;
           if(value != 0){
             pit_init(value);
-            PRINTF("Ciclo de %d segundos", value);
+            PRINTF("Ciclo de %d segundos\r\n", value);
           }
           else
             unblink();
@@ -285,7 +285,7 @@ int main(void)
           valid = true;
         }
         if (!strcmp(command, "unblink")){
-          blink();
+          unblink();
           PRINTF("Led rojo : %d\r\n", redo);
           valid = true;
         }
