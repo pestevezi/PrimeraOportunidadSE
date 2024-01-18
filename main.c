@@ -123,6 +123,25 @@ void green_on(bool on) {
   }
 }
 
+void blink(){
+  green_toggle();
+  red_toggle();
+}
+
+void pit_init(uint8_t mult){
+  SIM->SCGC6 |= SIM_SCGC6_PIT(1);
+  PIT->MCR &= PIT_MCR_MDIS(0);
+
+  PIT->CHANNEL[0].LDVAL = 10900000 * mult;
+  PIT->CHANNEL[0].TCTRL &= PIT_TCTRL_CHN(0);
+  PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TEN(1);
+  PIT->CHANNEL[0].TCTRL |= PIT_TCTRL_TIE(1);
+  NVIC_SetPriority(PIT_IRQn, 3); 
+  NVIC_ClearPendingIRQ(PIT_IRQn);
+  NVIC_EnableIRQ(PIT_IRQn);
+}
+
+
 void rb_state_machine(){
   switch(state){
     case 0:           // green, RED
@@ -162,6 +181,12 @@ void PORTD_Int_Handler(void){
 
 }
 
+void PITIntHandler(void) {
+
+
+  PIT->CHANNEL[0].TFLG |= PIT_TFLG_TIF(1); //clear the flag
+}
+
 
 int main(void)
 {
@@ -187,13 +212,34 @@ int main(void)
         {
             ch = GETCHAR();
             PUTCHAR(ch);
-            if(ch != '\0'){
+
+/*            if(ch != '\0'){
               command[i] = ch;
+
+              if(ch = '')
+                ;
+              
               if(ch == '\b')
                 i--;
               else
                 i++;
+            }*/
+
+            switch(ch){
+              case '\0':
+                break;
+              case '\b':
+                i--;
+                break;
+              case ' ':
+                i++;
+                break;
+               default:
+                command[i] = ch;
+                i++;
+                break;
             }
+
         } while (ch != '\r');
         command[i-1] = '\0';
         PRINTF("\r\n");
@@ -214,9 +260,8 @@ int main(void)
           PRINTF("Led verde : %d\r\n", greeno);
           valid = true;
         }
-        if (!strcmp(command, "off")){
-          green_toggle();
-          red_toggle();
+        if (!strcmp(command, "toggle")){
+          blink();
           PRINTF("Led rojo : %d\r\n", redo);
           valid = true;
         }
