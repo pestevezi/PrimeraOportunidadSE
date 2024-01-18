@@ -49,9 +49,73 @@
 /*******************************************************************************
  * Code
  ******************************************************************************/
-/*!
- * @brief Main function
- */
+
+void led_init()
+{
+  SIM->COPC = 0;
+  SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
+  PORTD->PCR[5] = PORT_PCR_MUX(1);
+  GPIOD->PDDR |= (1 << 5);
+  GPIOD->PSOR = (1 << 5);
+
+  SIM->SCGC5 |= SIM_SCGC5_PORTE_MASK;
+  PORTE->PCR[29] = PORT_PCR_MUX(1);
+  GPIOE->PDDR |= (1 << 29);
+  GPIOE->PSOR = (1 << 29);
+
+}
+
+void button_init(){
+
+
+  SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
+
+  PORTC->PCR[3] |= PORT_PCR_MUX(1);
+  PORTC->PCR[3] |= PORT_PCR_PE(1);
+  PORTC->PCR[3] |= PORT_PCR_PS(1);
+  PORTC->PCR[3] |= PORT_PCR_IRQC(10);
+  GPIOC->PDDR &= ~(1 << 3);
+
+  PORTC->PCR[12] |= PORT_PCR_MUX(1);
+  PORTC->PCR[12] |= PORT_PCR_PE(1);
+  PORTC->PCR[12] |= PORT_PCR_PS(1);
+  PORTC->PCR[12] |= PORT_PCR_ISF(1);
+  PORTC->PCR[12] |= PORT_PCR_IRQC(0b1010);
+  GPIOC->PDDR &= ~(1 << 12);
+
+  NVIC_EnableIRQ(PORTC_PORTD_IRQn);
+
+}
+
+
+void led_red_toggle(void)
+{
+  GPIOE->PTOR = (1 << 29);
+}
+
+
+void led_green_toggle()
+{
+  GPIOD->PTOR = (1 << 5);
+}
+
+void PORTD_Int_Handler(void){  
+   bool left = PORTC->PCR[12]>>24, right = PORTC->PCR[3]>>24;
+
+   if (left){
+    
+   }
+   if(right){
+    led_red_toggle();
+    led_green_toggle();
+   }
+
+  PORTC->PCR[12] |= PORT_PCR_ISF(1);
+  PORTC->PCR[3] |= PORT_PCR_ISF(1);
+
+}
+
+
 int main(void)
 {
   char ch;
@@ -61,7 +125,12 @@ int main(void)
   BOARD_BootClockRUN();
   BOARD_InitDebugConsole();
 
+  led_init();
+  button_init();
   PRINTF("\r\nReinicio!\r\n");
+
+  led_red_toggle();
+  led_green_toggle();
 
   while (1)
     {
