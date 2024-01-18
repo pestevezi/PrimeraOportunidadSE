@@ -35,6 +35,7 @@
 #include "fsl_device_registers.h"
 #include "fsl_debug_console.h"
 #include "board.h"
+#include "lcd.h"
 
 #include "pin_mux.h"
 /*******************************************************************************
@@ -50,8 +51,7 @@ bool greeno, redo;
  * Code
  ******************************************************************************/
 
-void led_init()
-{
+void led_init() {
   SIM->COPC = 0;
   SIM->SCGC5 |= SIM_SCGC5_PORTD_MASK;
   PORTD->PCR[5] = PORT_PCR_MUX(1);
@@ -65,7 +65,7 @@ void led_init()
 
 }
 
-void button_init(){
+void button_init() {
 
 
   SIM->SCGC5 |= SIM_SCGC5_PORTC_MASK;
@@ -85,6 +85,11 @@ void button_init(){
 
   NVIC_EnableIRQ(PORTC_PORTD_IRQn);
 
+}
+
+void irclk_ini() {
+  MCG->C1 = MCG_C1_IRCLKEN(1) | MCG_C1_IREFSTEN(1);
+  MCG->C2 = MCG_C2_IRCS(0); //0 32KHZ internal reference clock; 1= 4MHz irc
 }
 
 
@@ -128,11 +133,11 @@ void blink(){
   red_toggle();
 }
 
-void unblink(){
+void unblink() {
     PIT->CHANNEL[0].TCTRL &= PIT_TCTRL_TEN(0);
 }
 
-void pit_init(uint8_t mult){
+void pit_init(uint8_t mult) {
   SIM->SCGC6 |= SIM_SCGC6_PIT(1);
   PIT->MCR &= PIT_MCR_MDIS(0);
 
@@ -146,7 +151,7 @@ void pit_init(uint8_t mult){
 }
 
 
-void rb_state_machine(){
+void rb_state_machine() {
   switch(state){
     case 0:           // green, RED
       green_on(0);
@@ -169,7 +174,7 @@ void rb_state_machine(){
     state = 0;
 }
 
-void PORTD_Int_Handler(void){  
+void PORTD_Int_Handler(void) {  
    bool left = PORTC->PCR[12]>>24, right = PORTC->PCR[3]>>24;
 
    if (left){
@@ -192,8 +197,7 @@ void PIT_Int_Handler(void) {
 }
 
 
-int main(void)
-{
+int main(void) {
   char ch, command[200];
   int i = 0;//, e;
 
@@ -202,11 +206,13 @@ int main(void)
   BOARD_BootClockRUN();
   BOARD_InitDebugConsole();
 
+//  irclk_ini();
+  lcd_ini();
+
   led_init();
   button_init();
 
   PRINTF("\r\nReinicio!\r\n");
-
   while (1) {
       i = 0;
       bool valid = false, blinko = false;
@@ -274,8 +280,11 @@ int main(void)
           valid = true;
         }
         if(blinko){
-          uint8_t value = command[0] - 0x30U;
-          if(value != 0){
+          uint8_t value = atoi(command);
+          if(value != 0) {
+            if(value > 9)
+              value = 9;
+            lcd_display_dec(value);
             pit_init(value);
             PRINTF("Ciclo de %d segundos\r\n", value);
           }
@@ -286,7 +295,7 @@ int main(void)
         }
         if (!strcmp(command, "unblink")){
           unblink();
-          PRINTF("Led rojo : %d\r\n", redo);
+          PRINTF("Blink cancelado\r\n", redo);
           valid = true;
         }
         if(!valid)
