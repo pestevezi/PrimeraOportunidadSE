@@ -126,20 +126,20 @@ void green_on(bool on) {
 void rb_state_machine(){
   switch(state){
     case 0:           // green, RED
-      green_on(false);
-      red_on(true);
+      green_on(0);
+      red_on(1);
       break;          
     case 1:           // GREEN, red
-      green_on(true);
-      red_on(false);
+      green_on(1);
+      red_on(0);
       break;
     case 2:           // GREEN, RED
-      green_on(true);
-      red_on(true);
+      green_on(1);
+      red_on(1);
       break;
     case 3:           // green, red
-      green_on(false);
-      red_on(false);
+      green_on(0);
+      red_on(0);
       break;
   }
   if(++state >= 4)
@@ -179,7 +179,8 @@ int main(void)
   PRINTF("\r\nReinicio!\r\n");
 
   while (1) {
-      i = 0; //e = 0;
+      i = 0;
+      bool valid = false;
 
       PRINTF("$");
       do
@@ -188,7 +189,10 @@ int main(void)
             PUTCHAR(ch);
             if(ch != '\0'){
               command[i] = ch;
-              i++;
+              if(ch == '\b')
+                i--;
+              else
+                i++;
             }
         } while (ch != '\r');
         command[i-1] = '\0';
@@ -196,8 +200,27 @@ int main(void)
         if (!strcmp(command, "led1")){
           red_toggle();
           PRINTF("Led rojo : %d\r\n", redo);
+          valid = true;
         }
-        
-
+        if (!strcmp(command, "led2")){
+          green_toggle();
+          PRINTF("Led verde : %d\r\n", greeno);
+          valid = true;
+        }
+        if (!strcmp(command, "off")){
+          green_on(0);
+          red_on(0);
+          PRINTF("Led rojo : %d\r\n", redo);
+          PRINTF("Led verde : %d\r\n", greeno);
+          valid = true;
+        }
+        if (!strcmp(command, "off")){
+          green_toggle();
+          red_toggle();
+          PRINTF("Led rojo : %d\r\n", redo);
+          valid = true;
+        }
+        if(!valid)
+          PRINTF("Comando inválido\r\n");
     }
 }
