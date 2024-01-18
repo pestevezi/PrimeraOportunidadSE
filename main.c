@@ -40,8 +40,8 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
-
+int state = 0;
+bool greeno, redo;
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -88,26 +88,73 @@ void button_init(){
 }
 
 
-void led_red_toggle(void)
-{
+void red_toggle(void) {
   GPIOE->PTOR = (1 << 29);
+  redo = !redo;
 }
 
 
-void led_green_toggle()
-{
+void green_toggle() {
   GPIOD->PTOR = (1 << 5);
+  greeno = !greeno;
+}
+
+void red_on(bool on) {
+  if(on){
+//    GPIOE->PDOR = 1;
+    if(!redo)
+      red_toggle();
+   }
+  else{
+    if(redo)
+      red_toggle();
+  }
+}
+
+
+void green_on(bool on) {
+  if(on){
+    if(!greeno)
+      green_toggle();
+  }
+  else{
+    if(greeno)
+      green_toggle();
+  }
+}
+
+void rb_state_machine(){
+  switch(state){
+    case 0:           // green, RED
+      green_on(false);
+      red_on(true);
+      break;          
+    case 1:           // GREEN, red
+      green_on(true);
+      red_on(false);
+      break;
+    case 2:           // GREEN, RED
+      green_on(true);
+      red_on(true);
+      break;
+    case 3:           // green, red
+      green_on(false);
+      red_on(false);
+      break;
+  }
+  if(++state >= 4)
+    state = 0;
 }
 
 void PORTD_Int_Handler(void){  
    bool left = PORTC->PCR[12]>>24, right = PORTC->PCR[3]>>24;
 
    if (left){
-    
+    rb_state_machine();
    }
    if(right){
-    led_red_toggle();
-    led_green_toggle();
+    red_toggle();
+    green_toggle();
    }
 
   PORTC->PCR[12] |= PORT_PCR_ISF(1);
@@ -127,10 +174,8 @@ int main(void)
 
   led_init();
   button_init();
-  PRINTF("\r\nReinicio!\r\n");
 
-  led_red_toggle();
-  led_green_toggle();
+  PRINTF("\r\nReinicio!\r\n");
 
   while (1)
     {
