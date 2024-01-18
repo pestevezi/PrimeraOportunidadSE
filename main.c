@@ -165,7 +165,8 @@ void PORTD_Int_Handler(void){
 
 int main(void)
 {
-  char ch;
+  char ch, command[200];
+  int i = 0;//, e;
 
   /* Init board hardware. */
   BOARD_InitPins();
@@ -177,9 +178,26 @@ int main(void)
 
   PRINTF("\r\nReinicio!\r\n");
 
-  while (1)
-    {
-      ch = GETCHAR();
-      PUTCHAR(ch);
+  while (1) {
+      i = 0; //e = 0;
+
+      PRINTF("$");
+      do
+        {
+            ch = GETCHAR();
+            PUTCHAR(ch);
+            if(ch != '\0'){
+              command[i] = ch;
+              i++;
+            }
+        } while (ch != '\r');
+        command[i-1] = '\0';
+        PRINTF("\r\n");
+        if (!strcmp(command, "led1")){
+          red_toggle();
+          PRINTF("Led rojo : %d\r\n", redo);
+        }
+        
+
     }
 }
